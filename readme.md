@@ -12,10 +12,10 @@ library(copynumber)
 ```
 
 [DNAcopy](https://bioconductor.org/packages/release/bioc/html/DNAcopy.html)
+
+
+
 [copynumber]() 
-
-
-
 
 
 
@@ -23,7 +23,7 @@ library(copynumber)
 
 - - - -
 <details>
-<summary>STEP 0: Data cleaning </summary>
+<summary>STEP 0: Data cleaning and  </summary>
 <p> 
 
 </p>
@@ -35,8 +35,6 @@ library(copynumber)
 <summary>STEP 1: Data format for DNAcopy -  FILTERING FOR PROBE VARIANCE</summary>
 <p> 
  
-####  STEP 1  arrange dataset for DNAcopy  FILTERING FOR PROBE VARIANCE
-
 ```
 ## DNAcopy - read data in  format
 myd=read.table("data/all.arraychr.head.tsv.forDNAcopy", header=T, sep ="\t" )
