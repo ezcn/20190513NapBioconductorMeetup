@@ -32,7 +32,11 @@ library(copynumber)
 
 ####  STEP 1  
 
-
+- - - -
+<details>
+<summary>STEP 1  arrange dataset for DNAcopy  FILTERING FOR PROBE VARIANCE</summary>
+<p> 
+ 
 ####  STEP 1  arrange dataset for DNAcopy  FILTERING FOR PROBE VARIANCE
 
 ```
@@ -69,6 +73,9 @@ samplenames=c("AS006_good", "AS015_bad", "AS030_bad", "AS032_3xchr22", "AS036_ba
 
 imma.dnacopy<- CNA(setofsample, myspread.filtered$chr, myspread.filtered$start , data.type="logratio", sampleid=samplenames)
 ```
+</p>
+</details>
+
 
 ####  STEP 1  arrange dataset for copynumber FILTERING FOR PROBE VARIANCE
 ### copynumber input file: tab separated Column 1 numeric or character chr numbers, column 2 numeric local probe positions, subsequent column(s) the numeric copy number measurements for one or more samples (LogRatio) header of copy number columns should give sample IDs
