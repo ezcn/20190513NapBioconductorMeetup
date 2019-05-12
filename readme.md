@@ -1,0 +1,264 @@
+
+
+18 samples of DNA extracted from product of conception of recurrent miscarriages screened for genomic rearrangement using Array comparative genomic hybridization ([array CGH, aCGH](https://en.wikipedia.org/wiki/Comparative_genomic_hybridization)) 
+
+
+```
+library(ggplot2)
+library(DNAcopy)
+library(tidyr)
+library(dplyr) 
+library(copynumber) 
+```
+
+[DNAcopy](https://bioconductor.org/packages/release/bioc/html/DNAcopy.html)
+[copynumber]() 
+
+
+
+
+
+
+## PROCEDURE 
+
+#### STEP 0: Data Cleaning 
+
+#### STEP 1: Data format for DNAcopy 
+- filtering for probe variance 
+
+#### DNAcopy -  read data 
+
+
+
+####  STEP 1  
+
+
+####  STEP 1  arrange dataset for DNAcopy  FILTERING FOR PROBE VARIANCE
+
+```
+## DNAcopy - read data in  format
+myd=read.table("data/all.arraychr.head.tsv.forDNAcopy", header=T, sep ="\t" )
+
+## DNAcopy - remove duplicates 
+myd.noduplicat <- myd %>% distinct(chr, start, as_sample , .keep_all = TRUE)
+
+## DNAcopy - spread
+myspread<- myd.noduplicat  %>%  spread(as_sample , LogRatio )
+
+## DNAcopy - perprobe variance 
+myspread$prob.var <- apply (myspread[,6:23], 1 , var)
+
+png("imma.probe.variance.perchr.png", res=300, width=20 ,height=15, units="cm")
+ggplot(myspread, aes(as.factor(chr), prob.var))+ geom_boxplot ()+theme_bw()+ggtitle("Per-probe variance per-cromosome")
+dev.off()
+
+png("imma.probe.variance.png", res=300, width=15 ,height=15, units="cm")
+ggplot(myspread, aes( prob.var))+geom_density() +theme_bw()+ggtitle("Per-probe variance")+geom_vline(xintercept = c( unname(quantile(myspread$prob.var, 0.75 ) ),  #
+unname(quantile(myspread$prob.var, 0.99 ) )  ),  col="#ff7657")
+dev.off()
+
+##  DNAcopy - filter per variance in probes 
+variancetreshold= unname(quantile(myspread$prob.var, 0.99 ) )
+myspread.filtered=subset(myspread, prob.var < variancetreshold)
+
+## DNACopy - arrange dataset 
+## a vector or matrix of data from array-CGH, ROMA, or other copy number experiments. If it is a matrix the rows correspond to the markers and the columns to the samples.
+setofsample=cbind(myspread.filtered$AS006_good, myspread.filtered$AS015_bad, myspread.filtered$AS030_bad, myspread.filtered$AS032_3xchr22, myspread.filtered$AS036_bad, myspread.filtered$AS043_3xchr7, myspread.filtered$AS054_good, myspread.filtered$AS064_bad_5p, myspread.filtered$AS065_bad, myspread.filtered$AS069_good, myspread.filtered$AS071_3xchr22, myspread.filtered$AS074_3xchr8, myspread.filtered$AS078_bad, myspread.filtered$AS080_bad, myspread.filtered$AS086_3xchr12 ,myspread.filtered$AS087_good, myspread.filtered$AS090_good, myspread.filtered$AS093_bad)
+
+samplenames=c("AS006_good", "AS015_bad", "AS030_bad", "AS032_3xchr22", "AS036_bad", "AS043_3xchr7", "AS054_good", "AS064_bad_5p", "AS065_bad", "AS069_good", "AS071_3xchr22", "AS074_3xchr8", "AS078_bad", "AS080_bad", "AS086_3xchr12" ,"AS087_good", "AS090_good", "AS093_bad")
+
+imma.dnacopy<- CNA(setofsample, myspread.filtered$chr, myspread.filtered$start , data.type="logratio", sampleid=samplenames)
+```
+
+####  STEP 1  arrange dataset for copynumber FILTERING FOR PROBE VARIANCE
+### copynumber input file: tab separated Column 1 numeric or character chr numbers, column 2 numeric local probe positions, subsequent column(s) the numeric copy number measurements for one or more samples (LogRatio) header of copy number columns should give sample IDs
+#### copynumber-  read data 
+comyd=read.table("../array2/all.arraychr.head.tsv.forCopynumber", header=T, sep ="\t" )
+#### copynumber-  remove duplicates 
+comyd.noduplicat <- comyd %>% distinct(chr, start, as_sample , .keep_all = TRUE) 
+#### copynumber - spread
+comyspread<- comyd.noduplicat  %>%  spread(as_sample , LogRatio )
+#### copynumber - perprobe variance 
+comyspread$prob.var <- apply (comyspread[,3:20], 1 , var)
+####  copynumber - filter per variance in probes 
+covariancetreshold= unname(quantile(comyspread$prob.var, 0.99 ) )
+comyspread.filtered=subset(comyspread, prob.var<covariancetreshold) 
+imma.copynumber <- comyspread.filtered
+imma.copynumber$prob.var <- NULL 
+
+
+
+####  STEP 2  SEGMENTATION 
+
+####  STEP 2  SEGMENTATION with DNAcopy 
+#### DNACopy- smooth 
+imma.dnacopy.smooted<- smooth.CNA(imma.dnacopy)
+#### DNACopy - segemant using probe variance as weights  
+imma.dnacopy.segments <- segment(imma.dnacopy.smooted, weights=1-myspread.filtered$prob.var) 
+
+####  STEP 2  SEGMENTATION with copynumber
+#### copynumber - decide   GAMMA for segmentation 
+### -https://bmcgenomics.biomedcentral.com/articles/10.1186/1471-2164-13-591
+# In this paper, we describe a related approach. In particular, the proposed method utilizes penalized least squares regression to determine a piecewise constant fit to the data. Introducing a fixed penalty γ>0 for any difference in the fitted values of two neighboring observations induces an optimal solution of particular relevance to copy number data: a piecewise constant curve fully determined by the breakpoints and the average copy number values on each segment. The user defined penalty γ essentially controls the level of empirical evidence required to introduce a breakpoint. Given the number of breakpoints, the solution will be optimal in terms of least squares error.
+
+imma.chr=c(1,7,8,22)
+imma.sample=c(1,3,4,6,7,11,12, 18)
+names(imma.sample) <- c("AS006_good", "AS030_bad", "AS032_3xchr22", "AS043_3xchr7", "AS054_good", "AS071_3xchr22", "AS074_3xchr8", "AS093_bad")
+
+for (temp.chr in  imma.chr ) {
+for (temp.sample in names(imma.sample)  ) {
+name.pdf=paste( "imma.gamma.chr", temp.chr, "." , temp.sample,  ".png", sep ="" )
+png( name.pdf) 
+plotGamma(imma.copynumber, pos.unit = "bp", gammaRange = c(2, 20), dowins = TRUE, cv=TRUE, sample=imma.sample[temp.sample], chr =temp.chr )
+dev.off() 
+}
+} 
+
+
+#### copynumber - segment 
+# the lower gamma the more breakpoints 
+imma.copynumber.segments <- pcf(data=imma.copynumber, gamma=10, assembly="hg19", return.est=TRUE, save.res=TRUE , file.names=c("imma.copynumber..pcf", "imma.copynumber.segments"))
+
+
+samplenames=c("AS006_good", "AS015_bad", "AS030_bad", "AS032_3xchr22", "AS036_bad", "AS043_3xchr7", "AS054_good", "AS064_bad_5p", "AS065_bad", "AS069_good", "AS071_3xchr22", "AS074_3xchr8", "AS078_bad", "AS080_bad", "AS086_3xchr12" ,"AS087_good", "AS090_good", "AS093_bad")
+
+
+png("immaGenomeAS006_good.png", res=300, width=30 ,height=10, units="cm")
+plotGenome(imma.copynumber,   imma.copynumber.segments, assembly="hg19", sample=1, main="AS006_good")
+dev.off()
+
+png("immaGenomeAS015_bad.png", res=300, width=30 ,height=10, units="cm")
+plotGenome(imma.copynumber,   imma.copynumber.segments, assembly="hg19", sample=2, main="AS015_bad")
+dev.off()
+
+png("immaGenomeAS036_bad.png", res=300, width=30 ,height=10, units="cm")
+plotGenome(imma.copynumber,   imma.copynumber.segments, assembly="hg19", sample=5, main="AS036_bad")
+dev.off()
+
+
+png("immaGenomeAS043_3xchr7.png", res=300, width=30 ,height=10, units="cm")
+plotGenome(imma.copynumber,   imma.copynumber.segments, assembly="hg19", sample=6, main="AS043_3xchr7")
+dev.off()
+
+png("immaGenomeAS074_3xchr8.png", res=300, width=30 ,height=10, units="cm")
+plotGenome(imma.copynumber,   imma.copynumber.segments, assembly="hg19", sample=12, main="AS074_3xchr8")
+dev.off()
+
+
+pdf("imma.copynumber.genome.pdf")
+plotGenome(imma.copynumber,   imma.copynumber.segments, assembly="hg19")
+dev.off() 
+
+pdf("imma.copynumber.chromosome.pdf")
+plotChrom(imma.copynumber,  imma.copynumber.segments, assembly="hg19")
+dev.off() 
+
+
+## STEP 2.1:  COMPARE SEGMENTATIONS
+ 
+seg.copynumber=imma.copynumber.segments$segments
+seg.copynumber$type="PLS.copynumber"
+
+ids=imma.dnacopy.segments$out
+seg.dnacopy= cbind.data.frame(sampleID=ids$ID, chrom=ids$chrom,  arm=ids$chrom ,  start.pos=ids$loc.start,  end.pos=ids$loc.end,  n.probes=ids$num.mark,  mean=ids$seg.mean) 
+seg.dnacopy$type="CBS.dnacopy"
+
+seg.compare=rbind(seg.dnacopy, seg.copynumber)
+
+png("imma.segmentation.comparison.chrX.png", res=300, width=25 ,height=10, units="cm")
+ggplot(subset(seg.compare, chrom==23 &  sampleID=="AS006_good" ), aes(start, mean) )+geom_segment(aes(x = start.pos, y = mean, xend = end.pos, yend =mean, colour = type, alpha=0.2, size=n.probes)) +facet_grid ( sampleID ~ chrom )+theme_bw() +scale_colour_manual(values=c('red', 'blue')) +ggtitle ("segmentation - chr X - comparison  ") +xlab("chr position" ) +ylab("mean LogRation in segment")+ylim (-0.40 , 0.40 )
+ dev.off()
+
+
+png("imma.segmentation.comparison.chr7.png", res=300, width=25 ,height=10, units="cm")
+ggplot(subset(seg.compare, chrom==7 &  sampleID=="AS043_3xchr7" ), aes(start, mean) )+geom_segment(aes(x = start.pos, y = mean, xend = end.pos, yend =mean, colour = type, alpha=0.2, size=n.probes)) +facet_grid ( sampleID ~ chrom )+theme_bw() +scale_colour_manual(values=c('red', 'blue')) +ggtitle ("segmentation - chr 7 - comparison  ") +xlab("chr position" ) +ylab("mean LogRation in segment") +ylim (-0.40 , 0.40 )
+ dev.off()
+
+png("imma.segmentation.comparison.chr8.good.png", res=300, width=25 ,height=10, units="cm")
+ ggplot(subset(seg.compare, chrom==8 &  sampleID=="AS006_good" ), aes(start, mean) )+geom_segment(aes(x = start.pos, y = mean, xend = end.pos, yend =mean, colour = type, alpha=0.2, size=n.probes)) +facet_grid ( sampleID ~ chrom )+theme_bw() +scale_colour_manual(values=c('red', 'blue')) +ggtitle ("segmentation - chr 8 - comparison  ") +xlab("chr position" ) +ylab("mean LogRation in segment")+ylim (-0.40 , 0.40 )
+ dev.off()
+
+png("imma.segmentation.comparison.chr8.png", res=300, width=25 ,height=10, units="cm")
+ggplot(subset(seg.compare, chrom==8 &  sampleID=="AS074_3xchr8" ), aes(start, mean) )+geom_segment(aes(x = start.pos, y = mean, xend = end.pos, yend =mean, colour = type, alpha=0.2, size=n.probes)) +facet_grid ( sampleID ~ chrom )+theme_bw() +scale_colour_manual(values=c('red', 'blue')) +ggtitle ("segmentation - chr 8 - comparison  ") +xlab("chr position" ) +ylab("mean LogRation in segment")+ylim (-0.40 , 0.40 )
+ dev.off()
+
+
+
+## STEP 3:  CALL VARIANTS decide  THRESHOLD for copy gain / loss 
+
+## Check threshold in data from Agilent analyzer 
+myref=read.table("../array2/all.cyto.tsv" , header =T , sep="\t")
+> summary(subset(myref, Amp.Gain.Loss.Del >0)$Amp.Gain.Loss.Del )
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
+ 0.2513  0.3685  0.5328  0.7791  0.8490  4.4842
+> summary(subset(myref, Amp.Gain.Loss.Del <0)$Amp.Gain.Loss.Del )
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
+-1.6122 -0.6464 -0.4340 -0.5229 -0.3221 -0.2505
+
+imma.copynumber.calls=callAberrations(imma.copynumber.segments, thres.gain=0.15, thres.loss =-0.15 )
+
+
+png("imma.call.popfreq.png", res=300, width=30 ,height=15, units="cm")
+plotFreq(imma.copynumber.segments, thres.gain=0.15, thres.loss =-0.15, assembly="hg19")
+dev.off()
+
+png("imma.call.popfreq.chr14.png", res=300, width=30 ,height=15, units="cm")
+plotFreq(imma.copynumber.segments, thres.gain=0.15, thres.loss =-0.15, assembly="hg19", chrom=14)
+dev.off()
+
+
+## STEP 3.1:  COMPARE CALLS 
+thres.gain=0.15
+thres.loss =-0.15
+
+## format agilent reference calls and add to seg compare 
+myref.compare=read.table("../array2/all.cyto.tsv.forcomparison", header=T , sep="\t" )
+mc=myref.compare
+seg.agilent= cbind.data.frame(sampleID=mc$sampleid, chrom=mc$Chr,  arm=as.character(mc$Chr) ,  start.pos=mc$Start,  end.pos=mc$Stop_bp,  n.probes=as.numeric(mc$Probes), mean=mc$Amp.Gain.Loss.Del) 
+seg.agilent$type="Agilent"
+
+
+
+seg.compare.call.all=rbind( filter( seg.compare, mean >= thres.gain |  mean <= thres.loss) ,   seg.agilent)
+png("imma.call.compare.AS043_3xchr7.png", res=300, width=30 ,height=15, units="cm")
+ggplot(subset(seg.compare.call.all, chrom==7 &  sampleID=="AS043_3xchr7" ), aes(start, mean) )+geom_segment(aes(x = start.pos, y = mean, xend = end.pos, yend =mean, colour = type, alpha=0.2, size=n.probes)) +facet_grid ( sampleID ~ chrom )+theme_bw() +scale_colour_manual(values=c("red", "blue" , "green")) +ggtitle ("CNV calls - Agilent thres. 0.25, -0.25 -  PLS thres 0.15,  -0.15   ") +xlab("chr position" ) +ylab("mean LogRation in segment")+ylim(-0.4, 0.8) +geom_hline(yintercept =c(thres.gain, thres.loss) , colour="grey", type=2)
+dev.off() 
+
+png("imma.call.compare.AS074_3xchr8.png", res=300, width=30 ,height=15, units="cm")
+ggplot(subset(seg.compare.call.all, chrom==8  &  sampleID=="AS074_3xchr8" ), aes(start, mean) )+geom_segment(aes(x = start.pos, y = mean, xend = end.pos, yend =mean, colour = type, alpha=0.2, size=n.probes)) +facet_grid ( sampleID ~ chrom )+theme_bw() +scale_colour_manual(values=c("red", "blue" , "green")) +ggtitle ("CNV calls - Agilent thres. 0.25, -0.25 -  PLS thres 0.15,  -0.15   ") +xlab("chr position" ) +ylab("mean LogRation in segment")+ylim(-0.4,0.8) +geom_hline(yintercept =c(thres.gain, thres.loss) , colour="grey", type=2)
+dev.off() 
+
+###### CNV SIZE COMPARISON 
+png("imma.call.compare.png", res=300, width=12 ,height=12, units="cm")
+ggplot(seg.compare.call.all, aes((end.pos-start.pos)/1000000, n.probes, colour=type))+geom_point(alpha=0.4 ) +facet_grid(type ~ . )+theme_bw() +xlab("variant size (Mb)" )
+dev.off()
+
+png("imma.call.compare.less25Mb.png", res=300, width=12 ,height=12, units="cm")
+ggplot(seg.compare.call.all, aes((end.pos-start.pos)/1000000, n.probes, colour=type))+geom_point(alpha=0.4 ) +facet_grid(type ~ . )+theme_bw() +xlab("variant size (Mb)" )+xlim(0,25000000/1000000) +ylim(0, 1000)
+dev.off()
+
+
+seg.compare.call.all %>% group_by(type) %>% summarize(min=min(end.pos-start.pos)/1000000, max=max(end.pos-start.pos)/1000000, mean=mean(end.pos-start.pos)/1000000, median=median(end.pos-start.pos)/1000000, sd=sd(end.pos-start.pos)/1000000)
+ A tibble: 3 x 6
+  type                min   max  mean median    sd
+  <chr>             <dbl> <dbl> <dbl>  <dbl> <dbl>
+1 Agilent        0.000131  98.8  2.61  0.446  7.20
+2 CBS.dnacopy    0.000245  22.4  2.87  1.48   3.92
+3 PLS.copynumber 0.000312  22.7  2.76  1.23   3.91
+
+
+
+#### SAMPLES IN STANDBY BECAUSE OF ARRAY CGH
+
+
+cases=c("AS006_good", "AS015_bad", "AS030_bad", "AS032_3xchr22", "AS036_bad", "AS043_3xchr7", "AS054_good", "AS064_bad_5p", "AS065_bad", "AS069_good", "AS071_3xchr22", "AS074_3xchr8", "AS078_bad", "AS080_bad", "AS086_3xchr12" ,"AS087_good", "AS090_good", "AS093_bad")
+
+for ( ss in  cases) {
+plotname=paste("imma.cases.", ss, ".png")
+png(plotname, res=300, width=30 ,height=12, units="cm")
+plotSample(imma.dnacopy.segments, sampleid= ss, col=c("#fbeed7","#ffba5a"), segcol="#665c84", ylim=c(-0.4,0.4) )
+dev.off() 
+} 
+
+
+
