@@ -74,8 +74,15 @@ imma.dnacopy<- CNA(setofsample, myspread.filtered$chr, myspread.filtered$start ,
 </p>
 </details>
 
+- - - -
 
-####  STEP 1  arrange dataset for copynumber FILTERING FOR PROBE VARIANCE
+<details>
+<summary>STEP 1  arrange dataset for copynumber FILTERING FOR PROBE VARIANCE </summary>
+<p> 
+
+
+```
+####  
 ### copynumber input file: tab separated Column 1 numeric or character chr numbers, column 2 numeric local probe positions, subsequent column(s) the numeric copy number measurements for one or more samples (LogRatio) header of copy number columns should give sample IDs
 #### copynumber-  read data 
 comyd=read.table("../array2/all.arraychr.head.tsv.forCopynumber", header=T, sep ="\t" )
@@ -90,11 +97,17 @@ covariancetreshold= unname(quantile(comyspread$prob.var, 0.99 ) )
 comyspread.filtered=subset(comyspread, prob.var<covariancetreshold) 
 imma.copynumber <- comyspread.filtered
 imma.copynumber$prob.var <- NULL 
+```
+</p>
+</details>
 
+- - - -
 
-
-####  STEP 2  SEGMENTATION 
-
+<details>
+<summary>STEP 2  SEGMENTATION </summary>
+<p>
+ 
+``` 
 ####  STEP 2  SEGMENTATION with DNAcopy 
 #### DNACopy- smooth 
 imma.dnacopy.smooted<- smooth.CNA(imma.dnacopy)
@@ -158,9 +171,19 @@ pdf("imma.copynumber.chromosome.pdf")
 plotChrom(imma.copynumber,  imma.copynumber.segments, assembly="hg19")
 dev.off() 
 
+```
 
-## STEP 2.1:  COMPARE SEGMENTATIONS
- 
+
+</p>
+</details>
+
+- - - -
+
+<details>
+<summary>STEP 2.1:  COMPARE SEGMENTATIONS </summary>
+<p>
+
+```
 seg.copynumber=imma.copynumber.segments$segments
 seg.copynumber$type="PLS.copynumber"
 
@@ -187,9 +210,18 @@ png("imma.segmentation.comparison.chr8.png", res=300, width=25 ,height=10, units
 ggplot(subset(seg.compare, chrom==8 &  sampleID=="AS074_3xchr8" ), aes(start, mean) )+geom_segment(aes(x = start.pos, y = mean, xend = end.pos, yend =mean, colour = type, alpha=0.2, size=n.probes)) +facet_grid ( sampleID ~ chrom )+theme_bw() +scale_colour_manual(values=c('red', 'blue')) +ggtitle ("segmentation - chr 8 - comparison  ") +xlab("chr position" ) +ylab("mean LogRation in segment")+ylim (-0.40 , 0.40 )
  dev.off()
 
+```
 
+</p>
+</details>
 
-## STEP 3:  CALL VARIANTS decide  THRESHOLD for copy gain / loss 
+- - - -
+
+<details>
+<summary>STEP 3:  CALL VARIANTS decide  THRESHOLD for copy gain / loss</summary>
+<p>
+
+```
 
 ## Check threshold in data from Agilent analyzer 
 myref=read.table("../array2/all.cyto.tsv" , header =T , sep="\t")
@@ -210,6 +242,7 @@ dev.off()
 png("imma.call.popfreq.chr14.png", res=300, width=30 ,height=15, units="cm")
 plotFreq(imma.copynumber.segments, thres.gain=0.15, thres.loss =-0.15, assembly="hg19", chrom=14)
 dev.off()
+```
 
 
 ## STEP 3.1:  COMPARE CALLS 
