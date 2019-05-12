@@ -21,20 +21,18 @@ library(copynumber)
 
 ## PROCEDURE 
 
-#### STEP 0: Data Cleaning 
-
-#### STEP 1: Data format for DNAcopy 
-- filtering for probe variance 
-
-#### DNAcopy -  read data 
-
-
-
-####  STEP 1  
-
 - - - -
 <details>
-<summary>STEP 1  arrange dataset for DNAcopy  FILTERING FOR PROBE VARIANCE</summary>
+<summary>STEP 0: Data cleaning </summary>
+<p> 
+
+</p>
+</details>
+
+- - - -
+
+<details>
+<summary>STEP 1: Data format for DNAcopy -  FILTERING FOR PROBE VARIANCE</summary>
 <p> 
  
 ####  STEP 1  arrange dataset for DNAcopy  FILTERING FOR PROBE VARIANCE
