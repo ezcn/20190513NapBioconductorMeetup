@@ -2,6 +2,9 @@
 
 18 samples of DNA extracted from product of conception of recurrent miscarriages screened for genomic rearrangement using Array comparative genomic hybridization ([array CGH, aCGH](https://en.wikipedia.org/wiki/Comparative_genomic_hybridization)) 
 
+Agilent Sure print g3 isca v2 cgh 8x60k
+
+
 for space reason only three samples uploaded on git 
 
 
