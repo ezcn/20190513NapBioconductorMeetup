@@ -2,6 +2,11 @@
 
 18 samples of DNA extracted from product of conception of recurrent miscarriages screened for genomic rearrangement using Array comparative genomic hybridization ([array CGH, aCGH](https://en.wikipedia.org/wiki/Comparative_genomic_hybridization)) 
 
+for space reason only three samples uploaded on git 
+
+
+
+## Libraries R-equired: 
 
 ```
 library(ggplot2)
@@ -11,12 +16,12 @@ library(dplyr)
 library(copynumber) 
 ```
 
-[DNAcopy](https://bioconductor.org/packages/release/bioc/html/DNAcopy.html)
+- [copynumber](https://bioconductor.org/packages/release/bioc/html/copynumber.html)  on Bioconductor 
+- Links to the [copynumber tutorial](https://bioconductor.org/packages/release/bioc/vignettes/copynumber/inst/doc/copynumber.pdf)
+and the [copynumber documentation](https://bioconductor.org/packages/release/bioc/manuals/copynumber/man/copynumber.pdf)
 
-
-
-[copynumber]() 
-
+-[DNAcopy](https://bioconductor.org/packages/release/bioc/html/DNAcopy.html)
+ 
 
 
 ## PROCEDURE 
