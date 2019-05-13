@@ -13,7 +13,7 @@ This experiment is part of pre-sequencing screening of aneuploidies in product o
 
 For space reason only three samples uploaded on git 
 
-[Here, from  slide 19 onwards](https://docs.google.com/presentation/d/10_LoKn2tEtX9umvO0i1V8Krk2bFY-yd2UFhgXknJUIg/edit?usp=sharing) more details on this project and the use of ArrayCHG in this context.  
+[Here, from  slide 19 onwards]() more details on this project and the use of ArrayCHG in this context.  
 
 #### Libraries R-equired: 
 
