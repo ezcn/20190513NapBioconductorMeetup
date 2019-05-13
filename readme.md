@@ -18,8 +18,7 @@ library(copynumber)
 
 - [copynumber](https://bioconductor.org/packages/release/bioc/html/copynumber.html)  on Bioconductor 
 - Links to the [copynumber tutorial](https://bioconductor.org/packages/release/bioc/vignettes/copynumber/inst/doc/copynumber.pdf)
-and the [copynumber documentation](https://bioconductor.org/packages/release/bioc/manuals/copynumber/man/copynumber.pdf)
-
+and the [copynumber documentation](https://bioconductor.org/packages/release/bioc/manuals/copynumber/man/copynumber.pdf) 
 -[DNAcopy](https://bioconductor.org/packages/release/bioc/html/DNAcopy.html)
  
 
@@ -143,42 +142,37 @@ max(imma.copynumber$prob.var)
 ```
 With basic values `winsorize` is less stringent than my "variance" criteria, but can be finely tuened. 
 
-
-</p>
-</details>
-
-
-- - - -
-
-<details>
-<summary>STEP 1  arrange dataset for copynumber FILTERING FOR PROBE VARIANCE </summary>
-<p> 
-
-
 </p>
 </details>
 
 - - - -
 
 <details>
-<summary>STEP 2  SEGMENTATION </summary>
+<summary>STEP 2:  SEGMENTATION </summary>
 <p>
  
-``` 
-####  STEP 2  SEGMENTATION with DNAcopy 
-#### DNACopy- smooth 
-imma.dnacopy.smooted<- smooth.CNA(imma.dnacopy)
-#### DNACopy - segemant using probe variance as weights  
-imma.dnacopy.segments <- segment(imma.dnacopy.smooted, weights=1-myspread.filtered$prob.var) 
+##### Choose model parameters
 
-####  STEP 2  SEGMENTATION with copynumber
-#### copynumber - decide   GAMMA for segmentation 
-### -https://bmcgenomics.biomedcentral.com/articles/10.1186/1471-2164-13-591
-# In this paper, we describe a related approach. In particular, the proposed method utilizes penalized least squares regression to determine a piecewise constant fit to the data. Introducing a fixed penalty γ>0 for any difference in the fitted values of two neighboring observations induces an optimal solution of particular relevance to copy number data: a piecewise constant curve fully determined by the breakpoints and the average copy number values on each segment. The user defined penalty γ essentially controls the level of empirical evidence required to introduce a breakpoint. Given the number of breakpoints, the solution will be optimal in terms of least squares error.
+From the [`copynumber` paper](https://bmcgenomics.biomedcentral.com/articles/10.1186/1471-2164-13-591): 
 
+> In particular, the proposed method utilizes penalized least squares regression to determine a piecewise constant fit to the data. Introducing a fixed penalty γ>0 for any difference in the fitted values of two neighboring observations induces an optimal solution of particular relevance to copy number data: a piecewise constant curve fully determined by the breakpoints and the average copy number values on each segment. The user defined penalty γ essentially controls the level of empirical evidence required to introduce a breakpoint. Given the number of breakpoints, the solution will be optimal in terms of least squares error.
+
+We will use the `plotGamma` function from *copynumber* to find out what is the best parameter for segmentation. We will test segmentation on chromosome 1 of the first sample in the `imma.copynumber` data frame:  
+
+```
+imma.chr=1
+imma.sample=1 
+imma.gammaRange=c(2,20) ## change the values to explore 
+
+plotGamma(imma.copynumber, pos.unit = "bp", gammaRange = imma.gammaRange, dowins = TRUE, cv=TRUE, sample=imma.sample[imma.sample], chr =imma.chr )
+
+```
+
+Implementing for more two samples and few chromosomes: 
+```
 imma.chr=c(1,7,8,22)
-imma.sample=c(1,3,4,6,7,11,12, 18)
-names(imma.sample) <- c("AS006_good", "AS030_bad", "AS032_3xchr22", "AS043_3xchr7", "AS054_good", "AS071_3xchr22", "AS074_3xchr8", "AS093_bad")
+imma.sample=c(1,3)
+names(imma.sample) <- c("AS006_good", "AS074_3xchr8")
 
 for (temp.chr in  imma.chr ) {
 for (temp.sample in names(imma.sample)  ) {
@@ -188,85 +182,27 @@ plotGamma(imma.copynumber, pos.unit = "bp", gammaRange = c(2, 20), dowins = TRUE
 dev.off() 
 }
 } 
+```
 
 
-#### copynumber - segment 
-# the lower gamma the more breakpoints 
-imma.copynumber.segments <- pcf(data=imma.copynumber, gamma=10, assembly="hg19", return.est=TRUE, save.res=TRUE , file.names=c("imma.copynumber..pcf", "imma.copynumber.segments"))
+##### Segment 
 
+After choosing the right `gamma` we can proceed to segmentation. Remember the lower gamma the more breakpoints: 
 
-samplenames=c("AS006_good", "AS015_bad", "AS030_bad", "AS032_3xchr22", "AS036_bad", "AS043_3xchr7", "AS054_good", "AS064_bad_5p", "AS065_bad", "AS069_good", "AS071_3xchr22", "AS074_3xchr8", "AS078_bad", "AS080_bad", "AS086_3xchr12" ,"AS087_good", "AS090_good", "AS093_bad")
+We will use the `pcf` method; using the `file.name` option the result will be written in a file as well: 
+```
+imma.copynumber.segments <- pcf(data=imma.copynumber, gamma=10, assembly="hg19", return.est=TRUE, save.res=TRUE , file.names=c("imma.copynumber.pcf", "imma.copynumber.segments"))
+```
 
-
-png("immaGenomeAS006_good.png", res=300, width=30 ,height=10, units="cm")
+Visualize the segmentation for the whole genome for the first sample: 
+```
 plotGenome(imma.copynumber,   imma.copynumber.segments, assembly="hg19", sample=1, main="AS006_good")
-dev.off()
-
-png("immaGenomeAS015_bad.png", res=300, width=30 ,height=10, units="cm")
-plotGenome(imma.copynumber,   imma.copynumber.segments, assembly="hg19", sample=2, main="AS015_bad")
-dev.off()
-
-png("immaGenomeAS036_bad.png", res=300, width=30 ,height=10, units="cm")
-plotGenome(imma.copynumber,   imma.copynumber.segments, assembly="hg19", sample=5, main="AS036_bad")
-dev.off()
+```
 
 
-png("immaGenomeAS043_3xchr7.png", res=300, width=30 ,height=10, units="cm")
-plotGenome(imma.copynumber,   imma.copynumber.segments, assembly="hg19", sample=6, main="AS043_3xchr7")
-dev.off()
-
-png("immaGenomeAS074_3xchr8.png", res=300, width=30 ,height=10, units="cm")
-plotGenome(imma.copynumber,   imma.copynumber.segments, assembly="hg19", sample=12, main="AS074_3xchr8")
-dev.off()
-
-
-pdf("imma.copynumber.genome.pdf")
-plotGenome(imma.copynumber,   imma.copynumber.segments, assembly="hg19")
-dev.off() 
-
-pdf("imma.copynumber.chromosome.pdf")
+Visualize the segmentation per chromosome, per sample: 
+```
 plotChrom(imma.copynumber,  imma.copynumber.segments, assembly="hg19")
-dev.off() 
-
-```
-
-
-</p>
-</details>
-
-- - - -
-
-<details>
-<summary>STEP 2.1:  COMPARE SEGMENTATIONS </summary>
-<p>
-
-```
-seg.copynumber=imma.copynumber.segments$segments
-seg.copynumber$type="PLS.copynumber"
-
-ids=imma.dnacopy.segments$out
-seg.dnacopy= cbind.data.frame(sampleID=ids$ID, chrom=ids$chrom,  arm=ids$chrom ,  start.pos=ids$loc.start,  end.pos=ids$loc.end,  n.probes=ids$num.mark,  mean=ids$seg.mean) 
-seg.dnacopy$type="CBS.dnacopy"
-
-seg.compare=rbind(seg.dnacopy, seg.copynumber)
-
-png("imma.segmentation.comparison.chrX.png", res=300, width=25 ,height=10, units="cm")
-ggplot(subset(seg.compare, chrom==23 &  sampleID=="AS006_good" ), aes(start, mean) )+geom_segment(aes(x = start.pos, y = mean, xend = end.pos, yend =mean, colour = type, alpha=0.2, size=n.probes)) +facet_grid ( sampleID ~ chrom )+theme_bw() +scale_colour_manual(values=c('red', 'blue')) +ggtitle ("segmentation - chr X - comparison  ") +xlab("chr position" ) +ylab("mean LogRation in segment")+ylim (-0.40 , 0.40 )
- dev.off()
-
-
-png("imma.segmentation.comparison.chr7.png", res=300, width=25 ,height=10, units="cm")
-ggplot(subset(seg.compare, chrom==7 &  sampleID=="AS043_3xchr7" ), aes(start, mean) )+geom_segment(aes(x = start.pos, y = mean, xend = end.pos, yend =mean, colour = type, alpha=0.2, size=n.probes)) +facet_grid ( sampleID ~ chrom )+theme_bw() +scale_colour_manual(values=c('red', 'blue')) +ggtitle ("segmentation - chr 7 - comparison  ") +xlab("chr position" ) +ylab("mean LogRation in segment") +ylim (-0.40 , 0.40 )
- dev.off()
-
-png("imma.segmentation.comparison.chr8.good.png", res=300, width=25 ,height=10, units="cm")
- ggplot(subset(seg.compare, chrom==8 &  sampleID=="AS006_good" ), aes(start, mean) )+geom_segment(aes(x = start.pos, y = mean, xend = end.pos, yend =mean, colour = type, alpha=0.2, size=n.probes)) +facet_grid ( sampleID ~ chrom )+theme_bw() +scale_colour_manual(values=c('red', 'blue')) +ggtitle ("segmentation - chr 8 - comparison  ") +xlab("chr position" ) +ylab("mean LogRation in segment")+ylim (-0.40 , 0.40 )
- dev.off()
-
-png("imma.segmentation.comparison.chr8.png", res=300, width=25 ,height=10, units="cm")
-ggplot(subset(seg.compare, chrom==8 &  sampleID=="AS074_3xchr8" ), aes(start, mean) )+geom_segment(aes(x = start.pos, y = mean, xend = end.pos, yend =mean, colour = type, alpha=0.2, size=n.probes)) +facet_grid ( sampleID ~ chrom )+theme_bw() +scale_colour_manual(values=c('red', 'blue')) +ggtitle ("segmentation - chr 8 - comparison  ") +xlab("chr position" ) +ylab("mean LogRation in segment")+ylim (-0.40 , 0.40 )
- dev.off()
-
 ```
 
 </p>
@@ -275,12 +211,22 @@ ggplot(subset(seg.compare, chrom==8 &  sampleID=="AS074_3xchr8" ), aes(start, me
 - - - -
 
 <details>
-<summary>STEP 3:  CALL VARIANTS decide  THRESHOLD for copy gain / loss</summary>
+<summary>STEP 3:  CALL VARIANTS  </summary>
 <p>
+
+
+#####  Threshold for copy gain / loss
+
+These are the thresholds used by the Agilent analyzer
+
+| ![WFS1](img/betascan.impute099.w1000.maf01.Genome.png) | 
+|:--:| 
+| *Thresholds for gain/loss from Agilent  |
+
 
 ```
 
-## Check threshold in data from Agilent analyzer 
+## 
 myref=read.table("../array2/all.cyto.tsv" , header =T , sep="\t")
 > summary(subset(myref, Amp.Gain.Loss.Del >0)$Amp.Gain.Loss.Del )
    Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
@@ -301,6 +247,14 @@ plotFreq(imma.copynumber.segments, thres.gain=0.15, thres.loss =-0.15, assembly=
 dev.off()
 ```
 
+</p>
+</details>
+
+- - - -
+
+<details>
+<summary>STEP 3:  CALL VARIANTS decide  THRESHOLD for copy gain / loss</summary>
+<p>
 
 ## STEP 3.1:  COMPARE CALLS 
 thres.gain=0.15
@@ -340,20 +294,4 @@ seg.compare.call.all %>% group_by(type) %>% summarize(min=min(end.pos-start.pos)
 1 Agilent        0.000131  98.8  2.61  0.446  7.20
 2 CBS.dnacopy    0.000245  22.4  2.87  1.48   3.92
 3 PLS.copynumber 0.000312  22.7  2.76  1.23   3.91
-
-
-
-#### SAMPLES IN STANDBY BECAUSE OF ARRAY CGH
-
-
-cases=c("AS006_good", "AS015_bad", "AS030_bad", "AS032_3xchr22", "AS036_bad", "AS043_3xchr7", "AS054_good", "AS064_bad_5p", "AS065_bad", "AS069_good", "AS071_3xchr22", "AS074_3xchr8", "AS078_bad", "AS080_bad", "AS086_3xchr12" ,"AS087_good", "AS090_good", "AS093_bad")
-
-for ( ss in  cases) {
-plotname=paste("imma.cases.", ss, ".png")
-png(plotname, res=300, width=30 ,height=12, units="cm")
-plotSample(imma.dnacopy.segments, sampleid= ss, col=c("#fbeed7","#ffba5a"), segcol="#665c84", ylim=c(-0.4,0.4) )
-dev.off() 
-} 
-
-
 
