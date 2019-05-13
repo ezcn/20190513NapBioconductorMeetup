@@ -1,4 +1,4 @@
-### Copy number detection using array comparative genomic hybridization in a case study 
+### Copy number detection using array comparative genomic hybridization. A case study 
 
 
 #### Biological context and Array comparative genomic hybridization
