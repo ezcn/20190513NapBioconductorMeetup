@@ -1,11 +1,14 @@
+#### Biological context and Array comparative genomic hybridization
+
+This experiment is part of pre-sequencing screening of aneuploidies in product of conception of recurrent miscarriages. Samples with aneuploidies are discarded from sequencing, while euploid samples have been whole-genome sequenced at high coverage to identify genetic variants responsible for the miscarriage. 
 
 
-18 samples of DNA extracted from product of conception of recurrent miscarriages screened for genomic rearrangement using Array comparative genomic hybridization ([array CGH, aCGH](https://en.wikipedia.org/wiki/Comparative_genomic_hybridization)) 
+18 samples of DNA extracted from product of conception of recurrent miscarriages screened for genomic rearrangement using Array comparative genomic hybridization ([array CGH, aCGH](https://en.wikipedia.org/wiki/Comparative_genomic_hybridization)) with the Agilent Sure print g3 isca v2 cgh 8x60k platform: 
 
-Agilent Sure print g3 isca v2 cgh 8x60k
+>The SurePrint G3 ISCA v2 CGH 8x60K dual-color chromosomal microarray contains 60-mer high-quality probes. The ISCA CGH microarray is an effective tool for targeted genome-wide DNA copy number variation profiling without amplification or complexity reduction. |The Agilent SurePrint G3 ISCA v2 CGH 8x60K Microarray is designed with 60 KB overall median probe spacing and enhanced coverage on ISCA regions. The microarray includes 18,851 distinct biological features in ISCA regions and 40,208 backbone probes. In addition, the microarray contains a range of internal quality control features. 
 
 
-for space reason only three samples uploaded on git 
+For space reason only three samples uploaded on git 
 
 
 
@@ -22,7 +25,7 @@ library(copynumber)
 - [copynumber](https://bioconductor.org/packages/release/bioc/html/copynumber.html)  on Bioconductor 
 - Links to the [copynumber tutorial](https://bioconductor.org/packages/release/bioc/vignettes/copynumber/inst/doc/copynumber.pdf)
 and the [copynumber documentation](https://bioconductor.org/packages/release/bioc/manuals/copynumber/man/copynumber.pdf) 
--[DNAcopy](https://bioconductor.org/packages/release/bioc/html/DNAcopy.html)
+- [DNAcopy](https://bioconductor.org/packages/release/bioc/html/DNAcopy.html)
  
 
 
