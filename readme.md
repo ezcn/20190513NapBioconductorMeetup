@@ -106,19 +106,42 @@ Remove the probes with extreme variance by removing the correspondant rows:
 ## find the covariance threshold 
 covariancetreshold= unname(quantile(imma.spread$prob.var, 0.99 ) )
 
+covariancetreshold
+[1] 0.03405442
+
 ## making final dataset filtered by covariance 
 imma.copynumber <- subset(imma.spread, prob.var<covariancetreshold) 
 
+## chek if filtering was effective: 
+max (imma.spread$prob.var)
+[1] 0.4209459
+max (imma.copynumber$prob.var)
+[1] 0.03405438
+
+length (imma.spread$prob.var)
+[1] 59008
+length (imma.copynumber$prob.var)
+[1] 58417
+
+## finalizing: 
 imma.copynumber$prob.var <- NULL  ## remove the column prob.var 
-rm(imma.spread) ## remove unused data 
 
 ```
 
-In fact `copynumber` has a function for removing extreme values!!! 
+In fact the `winsorize` function form *copynumber* removes extreme values!!!  
 ```
+imma.wins <- winsorize(data=imma.spread,verbose=FALSE) 
+
+## check 
+max(imma.spread$prob.var)
+[1] 0.4209459
+max(imma.wins$prob.var)
+[1] 0.0907
+max(imma.copynumber$prob.var)
+[1] 0.03405438
 
 ```
-
+With basic values `winsorize` is less stringent than my "variance" criteria, but can be finely tuened. 
 
 
 </p>
