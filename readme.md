@@ -1,3 +1,6 @@
+### Copy number detection using array comparative genomic hybridization in a case study 
+
+
 #### Biological context and Array comparative genomic hybridization
 
 This experiment is part of pre-sequencing screening of aneuploidies in product of conception of recurrent miscarriages. Samples with aneuploidies are discarded from sequencing, while euploid samples have been whole-genome sequenced at high coverage to identify genetic variants responsible for the miscarriage. 
