@@ -6,7 +6,7 @@ for space reason only three samples uploaded on git
 
 
 
-## Libraries R-equired: 
+#### Libraries R-equired: 
 
 ```
 library(ggplot2)
@@ -24,58 +24,86 @@ and the [copynumber documentation](https://bioconductor.org/packages/release/bio
  
 
 
-## PROCEDURE 
+#### Procedure 
 
 - - - -
 <details>
-<summary>STEP 0: Data cleaning and  </summary>
-<p> 
-
-</p>
-</details>
-
-- - - -
-
-<details>
-<summary>STEP 1: Data format for DNAcopy -  FILTERING FOR PROBE VARIANCE</summary>
+<summary>STEP 1: Data preprocessing  </summary>
 <p> 
  
+##### Formatting data 
+
+The imput file is in the  folder data and looks like 
 ```
-## DNAcopy - read data in  format
-myd=read.table("data/all.arraychr.head.tsv.forDNAcopy", header=T, sep ="\t" )
-
-## DNAcopy - remove duplicates 
-myd.noduplicat <- myd %>% distinct(chr, start, as_sample , .keep_all = TRUE)
-
-## DNAcopy - spread
-myspread<- myd.noduplicat  %>%  spread(as_sample , LogRatio )
-
-## DNAcopy - perprobe variance 
-myspread$prob.var <- apply (myspread[,6:23], 1 , var)
-
-png("imma.probe.variance.perchr.png", res=300, width=20 ,height=15, units="cm")
-ggplot(myspread, aes(as.factor(chr), prob.var))+ geom_boxplot ()+theme_bw()+ggtitle("Per-probe variance per-cromosome")
-dev.off()
-
-png("imma.probe.variance.png", res=300, width=15 ,height=15, units="cm")
-ggplot(myspread, aes( prob.var))+geom_density() +theme_bw()+ggtitle("Per-probe variance")+geom_vline(xintercept = c( unname(quantile(myspread$prob.var, 0.75 ) ),  #
-unname(quantile(myspread$prob.var, 0.99 ) )  ),  col="#ff7657")
-dev.off()
-
-##  DNAcopy - filter per variance in probes 
-variancetreshold= unname(quantile(myspread$prob.var, 0.99 ) )
-myspread.filtered=subset(myspread, prob.var < variancetreshold)
-
-## DNACopy - arrange dataset 
-## a vector or matrix of data from array-CGH, ROMA, or other copy number experiments. If it is a matrix the rows correspond to the markers and the columns to the samples.
-setofsample=cbind(myspread.filtered$AS006_good, myspread.filtered$AS015_bad, myspread.filtered$AS030_bad, myspread.filtered$AS032_3xchr22, myspread.filtered$AS036_bad, myspread.filtered$AS043_3xchr7, myspread.filtered$AS054_good, myspread.filtered$AS064_bad_5p, myspread.filtered$AS065_bad, myspread.filtered$AS069_good, myspread.filtered$AS071_3xchr22, myspread.filtered$AS074_3xchr8, myspread.filtered$AS078_bad, myspread.filtered$AS080_bad, myspread.filtered$AS086_3xchr12 ,myspread.filtered$AS087_good, myspread.filtered$AS090_good, myspread.filtered$AS093_bad)
-
-samplenames=c("AS006_good", "AS015_bad", "AS030_bad", "AS032_3xchr22", "AS036_bad", "AS043_3xchr7", "AS054_good", "AS064_bad_5p", "AS065_bad", "AS069_good", "AS071_3xchr22", "AS074_3xchr8", "AS078_bad", "AS080_bad", "AS086_3xchr12" ,"AS087_good", "AS090_good", "AS093_bad")
-
-imma.dnacopy<- CNA(setofsample, myspread.filtered$chr, myspread.filtered$start , data.type="logratio", sampleid=samplenames)
+hr     start   as_sample       LogRatio
+9       13638428        AS006_good      -3.730386303e-002
+23      18634351        AS006_good      -2.629302068e-002
+6       121426906       AS006_good      -2.522241234e-002
+2       162718809       AS006_good      -1.018516467e-001
+11      115072736       AS006_good      -7.987021913e-003
+2       196233275       AS006_good      -1.999652319e-003
+23      18525214        AS006_good      -8.723768348e-002
+12      60800909        AS006_good      -1.349150180e-001
 ```
+
+Data form different samples have been concatenated while `copynumber` requires data arranged as: 
+> tab separated Column 1 numeric or character chr numbers, column 2 numeric local probe positions, subsequent column(s) the numeric copy number measurements for one or more samples (LogRatio) header of copy number columns should give sample IDs
+
+
+Therefore we need to rearrange the data (I will use `distinct` from *dplyr* and `spread` from *tydir*  ): 
+```
+#### read the data 
+comyd=read.table(gzfile("all.arraychr.head.tsv.forCopynumber.red.gz"), header=T, sep ="\t" )
+
+#### remove duplicates  (artifact from this particular experiment)
+comyd.noduplicat <- comyd %>% distinct(chr, start, as_sample , .keep_all = TRUE) 
+
+#### spread
+comyspread<- comyd.noduplicat  %>%  spread(as_sample , LogRatio )
+```
+
+At this point the data looks like: 
+```
+> head (comyspread)
+  chr  start  AS006_good   AS015_bad AS074_3xchr8
+1   1 120858 -0.08402374 -0.06140896 -0.019594946
+2   1 252304  0.06791855  0.15655191  0.047254993
+3   1 421256  0.19047230  0.08022728 -0.044166946
+4   1 779727  0.14821407  0.16200489  0.151237221
+5   1 834101  0.01549497 -0.05585227 -0.052730029
+6   1 839450  0.19701140  0.04511940  0.003677939
+
+```
+
+It is useful to remove probes with extreme variance: 
+```
+#### check perprobe variance 
+comyspread$prob.var <- apply (comyspread[,3:20], 1 , var)
+
+ggplot(comyspread, aes(as.factor(chr), prob.var))+ geom_boxplot ()+theme_bw()+ggtitle("Per-probe variance per-cromosome")
+
+
+#### filter per variance in probes 
+covariancetreshold= unname(quantile(comyspread$prob.var, 0.99 ) )
+
+comyspread.filtered=subset(comyspread, prob.var<covariancetreshold) 
+
+imma.copynumber <- comyspread.filtered
+
+imma.copynumber$prob.var <- NULL 
+
+```
+
+In fact `copynumber` has a function for that !!! 
+```
+
+```
+
+
+
 </p>
 </details>
+
 
 - - - -
 
@@ -84,23 +112,6 @@ imma.dnacopy<- CNA(setofsample, myspread.filtered$chr, myspread.filtered$start ,
 <p> 
 
 
-```
-####  
-### copynumber input file: tab separated Column 1 numeric or character chr numbers, column 2 numeric local probe positions, subsequent column(s) the numeric copy number measurements for one or more samples (LogRatio) header of copy number columns should give sample IDs
-#### copynumber-  read data 
-comyd=read.table("../array2/all.arraychr.head.tsv.forCopynumber", header=T, sep ="\t" )
-#### copynumber-  remove duplicates 
-comyd.noduplicat <- comyd %>% distinct(chr, start, as_sample , .keep_all = TRUE) 
-#### copynumber - spread
-comyspread<- comyd.noduplicat  %>%  spread(as_sample , LogRatio )
-#### copynumber - perprobe variance 
-comyspread$prob.var <- apply (comyspread[,3:20], 1 , var)
-####  copynumber - filter per variance in probes 
-covariancetreshold= unname(quantile(comyspread$prob.var, 0.99 ) )
-comyspread.filtered=subset(comyspread, prob.var<covariancetreshold) 
-imma.copynumber <- comyspread.filtered
-imma.copynumber$prob.var <- NULL 
-```
 </p>
 </details>
 
