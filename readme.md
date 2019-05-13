@@ -298,6 +298,6 @@ I have done calls also using *DNAcopy* that use a different alghoritm for segmen
 |:--:| 
 | *chr8   |
 
-| ![WFS1](img/agilent.png) | 
+| ![WFS1](img/imma.call.compare.AS074_3xchr8.png) | 
 |:--:| 
 | *Thresholds for gain/loss from Agilent  |
