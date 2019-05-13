@@ -151,7 +151,7 @@ With basic values `winsorize` is less stringent than my "variance" criteria, but
 - - - -
 
 <details>
-<summary>STEP 2:  SEGMENTATION </summary>
+<summary>STEP 2:  Segmentation </summary>
 <p>
  
 ##### Choose model parameters
@@ -214,7 +214,7 @@ plotChrom(imma.copynumber,  imma.copynumber.segments, assembly="hg19")
 - - - -
 
 <details>
-<summary>STEP 3:  CALL VARIANTS  </summary>
+<summary>STEP 3:  CNV calling </summary>
 <p>
 
 
@@ -222,7 +222,7 @@ plotChrom(imma.copynumber,  imma.copynumber.segments, assembly="hg19")
 
 These are the thresholds used by the Agilent analyzer
 
-| ![WFS1](img/betascan.impute099.w1000.maf01.Genome.png) | 
+| ![WFS1](img/agilent.png) | 
 |:--:| 
 | *Thresholds for gain/loss from Agilent  |
 
