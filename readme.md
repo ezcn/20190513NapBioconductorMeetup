@@ -193,7 +193,12 @@ dev.off()
 After choosing the right `gamma` we can proceed to segmentation. Remember the lower gamma the more breakpoints: 
 
 We will use the `pcf` method; using the `file.name` option the result will be written in a file as well: 
+
 ```
+## remove the prob.var column if not done before: 
+imma.copynumber$prob.var <- NULL  ## remove the column prob.var 
+
+## segmentation: 
 imma.copynumber.segments <- pcf(data=imma.copynumber, gamma=10, assembly="hg19", return.est=TRUE, save.res=TRUE , file.names=c("imma.copynumber.pcf", "imma.copynumber.segments"))
 ```
 
@@ -220,32 +225,42 @@ plotChrom(imma.copynumber,  imma.copynumber.segments, assembly="hg19")
 
 #####  Threshold for copy gain / loss
 
-These are the thresholds used by the Agilent analyzer
+The command for calling CNV in *copynumber* is `callAberrations`, but there is no indication of wich theshold to use. These are the thresholds used by the Agilent analyzer: 
 
 | ![WFS1](img/agilent.png) | 
 |:--:| 
 | *Thresholds for gain/loss from Agilent  |
 
 
+We can use the same the same threshold as Agilent: 
+```
+imma.thr.gain= 0.15 ## change to explore 
+imma.thr.loss= -0.15 ## change to explore 
+
+imma.copynumber.calls=callAberrations(imma.copynumber.segments, thres.gain = imma.thr.gain, thres.loss = imma.thr.loss  )
+
+> head (imma.copynumber.calls) 
+    sampleID chrom arm start.pos  end.pos n.probes   call
+1 AS006_good     1   p    120858  1019753       40 normal
+2 AS006_good     1   p   1023988  3594755       65 normal
+3 AS006_good     1   p   3601351  3643522       10   gain
+4 AS006_good     1   p   3657340 12627920      138 normal
+5 AS006_good     1   p  12687421 13448268       11 normal
+6 AS006_good     1   p  13491298 16345961       41 normal
+
 ```
 
-## 
-myref=read.table("../array2/all.cyto.tsv" , header =T , sep="\t")
-> summary(subset(myref, Amp.Gain.Loss.Del >0)$Amp.Gain.Loss.Del )
-   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
- 0.2513  0.3685  0.5328  0.7791  0.8490  4.4842
-> summary(subset(myref, Amp.Gain.Loss.Del <0)$Amp.Gain.Loss.Del )
-   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
--1.6122 -0.6464 -0.4340 -0.5229 -0.3221 -0.2505
+To visualize the calls (note that to plot abberation we use `imma.copynumber.segments`): 
+```
+plotAberration(segments=imma.copynumber.segments, thres.gain=imma.thr.gain, thres.loss = imma.thr.loss)
+```
 
-imma.copynumber.calls=callAberrations(imma.copynumber.segments, thres.gain=0.15, thres.loss =-0.15 )
-
-
-png("imma.call.popfreq.png", res=300, width=30 ,height=15, units="cm")
+Useful at population-level (still using `imma.copynumber.segments` ): 
+```
+## genome-wide
 plotFreq(imma.copynumber.segments, thres.gain=0.15, thres.loss =-0.15, assembly="hg19")
-dev.off()
 
-png("imma.call.popfreq.chr14.png", res=300, width=30 ,height=15, units="cm")
+## for one chromosome 
 plotFreq(imma.copynumber.segments, thres.gain=0.15, thres.loss =-0.15, assembly="hg19", chrom=14)
 dev.off()
 ```
@@ -256,45 +271,19 @@ dev.off()
 - - - -
 
 <details>
-<summary>STEP 3:  CALL VARIANTS decide  THRESHOLD for copy gain / loss</summary>
+<summary> Calls comparison </summary>
 <p>
 
-## STEP 3.1:  COMPARE CALLS 
-thres.gain=0.15
-thres.loss =-0.15
+I have done calls also using *DNAcopy* that use a different alghoritm for segmentation and here I compare the call sets obtained with *DNAcopy* and *copynumber* with the call set from the Agilent: 
 
-## format agilent reference calls and add to seg compare 
-myref.compare=read.table("../array2/all.cyto.tsv.forcomparison", header=T , sep="\t" )
-mc=myref.compare
-seg.agilent= cbind.data.frame(sampleID=mc$sampleid, chrom=mc$Chr,  arm=as.character(mc$Chr) ,  start.pos=mc$Start,  end.pos=mc$Stop_bp,  n.probes=as.numeric(mc$Probes), mean=mc$Amp.Gain.Loss.Del) 
-seg.agilent$type="Agilent"
+| ![WFS1](img/agilent.png) | 
+|:--:| 
+| *Thresholds for gain/loss from Agilent  |
 
+| ![WFS1](img/agilent.png) | 
+|:--:| 
+| *Thresholds for gain/loss from Agilent  |
 
-
-seg.compare.call.all=rbind( filter( seg.compare, mean >= thres.gain |  mean <= thres.loss) ,   seg.agilent)
-png("imma.call.compare.AS043_3xchr7.png", res=300, width=30 ,height=15, units="cm")
-ggplot(subset(seg.compare.call.all, chrom==7 &  sampleID=="AS043_3xchr7" ), aes(start, mean) )+geom_segment(aes(x = start.pos, y = mean, xend = end.pos, yend =mean, colour = type, alpha=0.2, size=n.probes)) +facet_grid ( sampleID ~ chrom )+theme_bw() +scale_colour_manual(values=c("red", "blue" , "green")) +ggtitle ("CNV calls - Agilent thres. 0.25, -0.25 -  PLS thres 0.15,  -0.15   ") +xlab("chr position" ) +ylab("mean LogRation in segment")+ylim(-0.4, 0.8) +geom_hline(yintercept =c(thres.gain, thres.loss) , colour="grey", type=2)
-dev.off() 
-
-png("imma.call.compare.AS074_3xchr8.png", res=300, width=30 ,height=15, units="cm")
-ggplot(subset(seg.compare.call.all, chrom==8  &  sampleID=="AS074_3xchr8" ), aes(start, mean) )+geom_segment(aes(x = start.pos, y = mean, xend = end.pos, yend =mean, colour = type, alpha=0.2, size=n.probes)) +facet_grid ( sampleID ~ chrom )+theme_bw() +scale_colour_manual(values=c("red", "blue" , "green")) +ggtitle ("CNV calls - Agilent thres. 0.25, -0.25 -  PLS thres 0.15,  -0.15   ") +xlab("chr position" ) +ylab("mean LogRation in segment")+ylim(-0.4,0.8) +geom_hline(yintercept =c(thres.gain, thres.loss) , colour="grey", type=2)
-dev.off() 
-
-###### CNV SIZE COMPARISON 
-png("imma.call.compare.png", res=300, width=12 ,height=12, units="cm")
-ggplot(seg.compare.call.all, aes((end.pos-start.pos)/1000000, n.probes, colour=type))+geom_point(alpha=0.4 ) +facet_grid(type ~ . )+theme_bw() +xlab("variant size (Mb)" )
-dev.off()
-
-png("imma.call.compare.less25Mb.png", res=300, width=12 ,height=12, units="cm")
-ggplot(seg.compare.call.all, aes((end.pos-start.pos)/1000000, n.probes, colour=type))+geom_point(alpha=0.4 ) +facet_grid(type ~ . )+theme_bw() +xlab("variant size (Mb)" )+xlim(0,25000000/1000000) +ylim(0, 1000)
-dev.off()
-
-
-seg.compare.call.all %>% group_by(type) %>% summarize(min=min(end.pos-start.pos)/1000000, max=max(end.pos-start.pos)/1000000, mean=mean(end.pos-start.pos)/1000000, median=median(end.pos-start.pos)/1000000, sd=sd(end.pos-start.pos)/1000000)
- A tibble: 3 x 6
-  type                min   max  mean median    sd
-  <chr>             <dbl> <dbl> <dbl>  <dbl> <dbl>
-1 Agilent        0.000131  98.8  2.61  0.446  7.20
-2 CBS.dnacopy    0.000245  22.4  2.87  1.48   3.92
-3 PLS.copynumber 0.000312  22.7  2.76  1.23   3.91
-
+| ![WFS1](img/agilent.png) | 
+|:--:| 
+| *Thresholds for gain/loss from Agilent  |
