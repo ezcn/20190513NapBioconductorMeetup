@@ -282,13 +282,21 @@ dev.off()
 
 I have done calls also using *DNAcopy* that use a different alghoritm for segmentation and here I compare the call sets obtained with *DNAcopy* and *copynumber* with the call set from the Agilent: 
 
-| ![WFS1](img/agilent.png) | 
+| ![WFS1](img/pipeoverview.png) | 
 |:--:| 
-| *Thresholds for gain/loss from Agilent  |
+| *Call comparison  |
 
-| ![WFS1](img/agilent.png) | 
+| ![WFS1](img/imma.call.compare.png) | 
 |:--:| 
-| *Thresholds for gain/loss from Agilent  |
+| *Call comparison  |
+
+| ![WFS1](img/imma.segmentation.comparison.chr7.png) | 
+|:--:| 
+| *chr7   |
+
+| ![WFS1](img/imma.segmentation.comparison.chr8.png) | 
+|:--:| 
+| *chr8   |
 
 | ![WFS1](img/agilent.png) | 
 |:--:| 
