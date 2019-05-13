@@ -53,18 +53,18 @@ Data form different samples have been concatenated while `copynumber` requires d
 Therefore we need to rearrange the data (I will use `distinct` from *dplyr* and `spread` from *tydir*  ): 
 ```
 #### read the data 
-comyd=read.table(gzfile("all.arraychr.head.tsv.forCopynumber.red.gz"), header=T, sep ="\t" )
+imma=read.table(gzfile("all.arraychr.head.tsv.forCopynumber.red.gz"), header=T, sep ="\t" )
 
 #### remove duplicates  (artifact from this particular experiment)
-comyd.noduplicat <- comyd %>% distinct(chr, start, as_sample , .keep_all = TRUE) 
+imma.noduplicat <- imma %>% distinct(chr, start, as_sample , .keep_all = TRUE) 
 
 #### spread
-comyspread<- comyd.noduplicat  %>%  spread(as_sample , LogRatio )
+imma.spread<- imma.noduplicat  %>%  spread(as_sample , LogRatio )
 ```
 
 At this point the data looks like: 
 ```
-> head (comyspread)
+> head (imma.spread)
   chr  start  AS006_good   AS015_bad AS074_3xchr8
 1   1 120858 -0.08402374 -0.06140896 -0.019594946
 2   1 252304  0.06791855  0.15655191  0.047254993
@@ -75,26 +75,46 @@ At this point the data looks like:
 
 ```
 
+
+##### Filter per variance in probes 
+
 It is useful to remove probes with extreme variance: 
 ```
 #### check perprobe variance 
-comyspread$prob.var <- apply (comyspread[,3:20], 1 , var)
+imma.spread$prob.var <- apply (imma.spread[,3:5], 1 , var)
+```
 
-ggplot(comyspread, aes(as.factor(chr), prob.var))+ geom_boxplot ()+theme_bw()+ggtitle("Per-probe variance per-cromosome")
+This adds a column with probe variance: 
+```
+> head (imma.spread)
+  chr  start  AS006_good   AS015_bad AS074_3xchr8     prob.var
+1   1 120858 -0.08402374 -0.06140896 -0.019594946 1.068485e-03
+2   1 252304  0.06791855  0.15655191  0.047254993 3.371445e-03
+3   1 421256  0.19047230  0.08022728 -0.044166946 1.378058e-02
+4   1 779727  0.14821407  0.16200489  0.151237221 5.254479e-05
+5   1 834101  0.01549497 -0.05585227 -0.052730029 1.625804e-03
+6   1 839450  0.19701140  0.04511940  0.003677939 1.036107e-02
+```
+ 
+Ggplot the variance per probe: 
+```
+ggplot(imma.spread, aes(as.factor(chr), prob.var))+ geom_boxplot ()+theme_bw()+ggtitle("Per-probe variance per-cromosome")
+```
 
+Remove the probes with extreme variance by removing the correspondant rows: 
+```
+## find the covariance threshold 
+covariancetreshold= unname(quantile(imma.spread$prob.var, 0.99 ) )
 
-#### filter per variance in probes 
-covariancetreshold= unname(quantile(comyspread$prob.var, 0.99 ) )
+## making final dataset filtered by covariance 
+imma.copynumber <- subset(imma.spread, prob.var<covariancetreshold) 
 
-comyspread.filtered=subset(comyspread, prob.var<covariancetreshold) 
-
-imma.copynumber <- comyspread.filtered
-
-imma.copynumber$prob.var <- NULL 
+imma.copynumber$prob.var <- NULL  ## remove the column prob.var 
+rm(imma.spread) ## remove unused data 
 
 ```
 
-In fact `copynumber` has a function for that !!! 
+In fact `copynumber` has a function for removing extreme values!!! 
 ```
 
 ```
