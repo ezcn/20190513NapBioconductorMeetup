@@ -138,7 +138,7 @@ imma.copynumber$prob.var <- NULL  ## remove the column prob.var
 
 In fact the `winsorize` function form *copynumber* removes extreme values!!!  
 ```
-imma.wins <- winsorize(data=imma.spread,verbose=FALSE) 
+imma.win <- winsorize(imma.spread, pos.unit = "bp", arms = NULL, method = "mad", tau = 2.5,k = 25, gamma = 40, iter = 1, assembly = "hg19", digits = 4,return.outliers = FALSE, save.res = TRUE, file.names =c("all.arraychr.head.tsv.forCopynumber.winsorized", "all.arraychr.head.tsv.forCopynumber.outliers") ,verbose = TRUE) 
 
 ## check 
 max(imma.spread$prob.var)
