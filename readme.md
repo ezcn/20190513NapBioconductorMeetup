@@ -194,6 +194,30 @@ dev.off()
 ```
 
 
+Implementing for all samples all chromosomes: 
+```
+optimalgamma <- vector() 
+
+for (samp in seq(1,18) ) {
+
+for (chrom in seq(1, 22)) {
+	
+	#print(c(sample, chrom ))  
+	myopt<- plotGamma(imma.win,  pos.unit = "bp", gammaRange = imma.gammaRange, dowins = TRUE, cv=TRUE, sample=samp, chr =chrom  )$optGamm
+	optimalgamma <- c(optimalgamma, myopt) 
+	}  
+
+}
+ 
+summary(optimalgamma) 
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+  2.000   6.000  10.000   9.616  12.000  20.000 
+
+```
+
+
+
+
 ##### Segment 
 
 After choosing the right `gamma` we can proceed to segmentation. Remember the lower gamma the more breakpoints: 
